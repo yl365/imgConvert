@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/png" href="/appicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="/style.css"/>
+    <title>imgConvert — 图片格式转换</title>
+</head>
+<body>
+<div class="app">
+    <!-- ── 顶栏 ───────────────────────────────────────────── -->
+    <header class="titlebar">
+        <div class="titlebar-drag" id="titlebar-drag">
+            <div class="brand">
+                <img class="brand-mark" src="/appicon.png" alt="" aria-hidden="true"/>
+                <span class="brand-text">
+                    <span class="brand-name">imgConvert</span>
+                    <span class="brand-sub">图片格式转换</span>
+                </span>
+            </div>
+
+            <div class="titlebar-actions">
+                <div class="win-btns" id="win-btns" hidden>
+                    <button class="win-btn" id="btn-min" title="最小化" aria-label="最小化">
+                        <svg viewBox="0 0 10 10" stroke="currentColor" stroke-width="1"><line x1="0" y1="5" x2="10" y2="5"/></svg>
+                    </button>
+                    <button class="win-btn" id="btn-max" title="最大化" aria-label="最大化">
+                        <svg class="ic-max" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1" fill="none"><rect x="0.5" y="0.5" width="9" height="9"/></svg>
+                        <svg class="ic-restore" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1" fill="none" aria-hidden="true">
+                            <path d="M0.5 0.5 H6.5 V3.5 M0.5 0.5 V6.5 H3.5"/>
+                            <path d="M6.5 3.5 H9.5 V9.5 H3.5 V6.5"/>
+                        </svg>
+                    </button>
+                    <button class="win-btn win-btn-close" id="btn-close" title="关闭" aria-label="关闭">
+                        <svg viewBox="0 0 10 10" stroke="currentColor" stroke-width="1"><line x1="0" y1="0" x2="10" y2="10"/><line x1="10" y1="0" x2="0" y2="10"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── 内容区 ─────────────────────────────────────────── -->
+    <main class="content">
+        <section class="panel list-panel" id="list-panel" data-file-drop-target>
+            <div class="list-head">
+                <div class="list-title">
+                    文件列表
+                    <span class="badge" id="file-count">0</span>
+                    <span class="list-sub" id="size-total"></span>
+                </div>
+                <div class="list-actions">
+                    <button class="btn btn-soft" id="btn-add-files">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        添加文件
+                    </button>
+                    <button class="btn btn-soft" id="btn-add-folder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        添加文件夹
+                    </button>
+                    <button class="btn btn-text" id="btn-remove" disabled>移除选中</button>
+                    <button class="btn btn-text btn-danger" id="btn-clear" disabled>清空</button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="file-table">
+                    <colgroup>
+                        <col style="width:38px"/>
+                        <col/>
+                        <col style="width:92px"/>
+                        <col style="width:132px"/>
+                        <col style="width:104px"/>
+                        <col style="width:82px"/>
+                        <col style="width:76px"/>
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th class="col-check"><input type="checkbox" id="check-all" aria-label="全选"/></th>
+                        <th>图片文件</th>
+                        <th class="num">原大小</th>
+                        <th class="num">转换后</th>
+                        <th class="num">压缩比</th>
+                        <th class="num">耗时</th>
+                        <th>状态</th>
+                    </tr>
+                    </thead>
+                </table>
+                <div class="table-scroll" id="table-scroll">
+                    <table class="file-table file-table-body">
+                        <colgroup>
+                            <col style="width:38px"/>
+                            <col/>
+                            <col style="width:92px"/>
+                            <col style="width:132px"/>
+                            <col style="width:104px"/>
+                            <col style="width:82px"/>
+                            <col style="width:76px"/>
+                        </colgroup>
+                        <tbody id="file-rows"></tbody>
+                    </table>
+                    <div class="empty" id="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <p>拖放图片文件或文件夹到此处，或点击上方按钮添加</p>
+                        <p class="empty-hint" id="dz-hint">支持绝大多数常见图片格式，文件夹将递归扫描</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ── 底部操作区 ─────────────────────────────────────── -->
+    <footer class="dock">
+        <div class="dock-grid">
+            <div class="field field-out">
+                <label class="field-label" for="out-dir">输出目录</label>
+                <div class="field-body">
+                    <div class="out-mode-row">
+                        <div class="segmented" id="out-mode" role="group" aria-label="输出目录模式">
+                            <button type="button" data-mode="source" class="active">原目录</button>
+                            <button type="button" data-mode="custom">自定义</button>
+                        </div>
+                        <label class="switch overwrite-toggle" title="关闭时会跳过已存在且非空的文件，用于断点续转">
+                            <input type="checkbox" id="out-overwrite"/>
+                            <span class="track"></span>
+                            <span class="toggle-text">存在则覆盖</span>
+                        </label>
+                    </div>
+                    <div class="path-input" id="out-dir-wrap">
+                        <input id="out-dir" type="text" readonly placeholder="与源文件同级" title=""/>
+                        <button class="path-btn" id="btn-out-dir" type="button" title="选择输出目录">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field field-format-quality">
+                <label class="field-label">输出格式</label>
+                <div class="field-body">
+                    <div class="chips" id="format-chips"></div>
+                    <div class="fq-line">
+                        <input type="range" id="quality" min="1" max="100" step="1" value="80"
+                               aria-label="图片质量，通常建议在70-90之间" title="图片质量，通常建议在70-90之间"/>
+                        <span class="field-value fq-val" id="quality-val">80</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field field-size">
+                <label class="field-label">
+                    输出尺寸 <span class="field-value" id="size-summary">原尺寸</span>
+                </label>
+                <div class="size-row">
+                    <div class="segmented" id="resize-mode" role="group" aria-label="输出尺寸模式">
+                        <button type="button" data-mode="" class="active">原尺寸</button>
+                        <button type="button" data-mode="fw">固定宽</button>
+                        <button type="button" data-mode="fh">固定高</button>
+                        <button type="button" data-mode="fl">固定长边</button>
+                        <button type="button" data-mode="pct">等比缩放</button>
+                    </div>
+                    <div class="num-wrap" id="resize-num" data-unit="px">
+                        <input id="resize-value" type="number" min="1" max="100000" step="1"
+                               placeholder="像素" title="固定宽/高/长边输入像素值（另一条边自动等比）；等比缩放输入百分比"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dock-bottom">
+            <div class="progress-block">
+                <div class="progress" id="progress">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="stats" id="stats">就绪</div>
+            </div>
+            <div class="run-actions">
+                <button class="btn btn-primary" id="btn-start" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="6 4 20 12 6 20 6 4"/>
+                    </svg>
+                    开始转换
+                </button>
+                <button class="btn btn-ghost" id="btn-cancel" disabled>停止</button>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
