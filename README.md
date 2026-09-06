@@ -4,6 +4,8 @@
 
 桌面端图片批量转换工具。把图片或整个文件夹拖进来，选好格式，一键转换——**快到飞起，压缩狠质量又看不出差别**。
 
+🌐 官方网站：[https://imgconvert.bossbbs.com/](https://imgconvert.bossbbs.com/)
+
 ---
 
 ## 为什么用 imgConvert
