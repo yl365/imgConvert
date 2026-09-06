@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>imgConvert · 极速图片批量格式转换</title>
+<meta name="description" content="imgConvert 是一款本地运行的桌面端图片批量转换工具。拖入文件夹，选好格式，一键转换——毫秒级单图、满核并发，输出严格按原目录结构落盘，绝不丢文件。支持 AVIF / WebP / JPEG / JXL / PNG / GIF / TIFF。">
+<meta name="theme-color" content="#0A0B0D">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="imgConvert · 极速图片批量格式转换">
+<meta property="og:description" content="本地运行、毫秒级单图、满核并发。拖入文件夹一键批量转换，输出严格保留目录结构，绝不丢文件。">
+<meta property="og:image" content="assets/img/ui.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230A0B0D'/><path d='M18.5 4 L8 18.5 h6.2 L12 28 L24 13.2 h-6.3 z' fill='%23D8FF3E'/></svg>">
+
+<!-- 字体加载链：国内镜像逐级兜底，最终回落本地自托管子集（详见下方脚本） -->
+<link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+<script>
+/* imgConvert — 字体 CDN 容错加载
+   国内无法访问 fonts.googleapis.com / fonts.gstatic.com，故一律改用国内镜像。
+   任一级失败（onerror / 超时 / 字体文件实际不可达）即自动降级到下一级，
+   最后回落本地自托管子集 assets/fonts/，保证版式不塌。
+   注：三个字体族均不含 CJK 字形，中文始终由系统字体渲染。 */
+(function () {
+  var Q = 'family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800'
+        + '&family=IBM+Plex+Mono:wght@400;500;600'
+        + '&family=IBM+Plex+Sans:wght@400;500;600'
+        + '&display=swap';
+
+  var SOURCES = [
+    'https://fonts.googleapis.cn/css2?' + Q,  /* 1. Google 官方国内镜像（字体文件 fonts.gstatic.cn） */
+    'https://fonts.loli.net/css2?' + Q,       /* 2. 第三方完整镜像（字体文件 gstatic.loli.net） */
+    'assets/fonts/fonts.css'                  /* 3. 本地自托管 latin 子集 */
+  ];
+
+  var PROBE = '700 16px "Bricolage Grotesque"';
+  var TIMEOUT = 5000;
+  var i = 0, done = false;
+
+  function finish() {
+    if (done) return;
+    done = true;
+    document.documentElement.className += ' fonts-ready';
+  }
+
+  function next() {
+    if (done) return;
+    if (i >= SOURCES.length) return finish();
+
+    var href = SOURCES[i++];
+    var isLast = (i === SOURCES.length);
+    var link = document.createElement('link');
+    var settled = false;
+    var timer = setTimeout(fail, TIMEOUT);
+
+    function ok() { if (settled) return; settled = true; clearTimeout(timer); finish(); }
+    function fail() { if (settled) return; settled = true; clearTimeout(timer); link.remove(); next(); }
+
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onerror = fail;
+    link.onload = function () {
+      // 末级（本地）或环境不支持 Font Loading API 时直接判定成功
+      if (isLast || !document.fonts || !document.fonts.load) return ok();
+      // 样式表加载成功 ≠ 字体文件可达，实测一次再决定是否继续降级
+      document.fonts.load(PROBE).then(function (faces) {
+        (faces && faces.length) ? ok() : fail();
+      }, fail);
+    };
+
+    document.head.appendChild(link);
+  }
+
+  next();
+})();
+</script>
+<noscript><link rel="stylesheet" href="assets/fonts/fonts.css"></noscript>
+
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header" id="siteHeader">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M13.8 2 L4 14 h6 L8.4 22 L20 9.4 h-6.2 z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-name">imgConvert</span>
+    </a>
+
+    <nav class="nav" aria-label="主导航">
+      <a href="#features">特性</a>
+      <a href="#formats">格式</a>
+      <a href="#how">上手</a>
+      <a href="#download">下载</a>
+    </nav>
+
+    <a class="btn btn-sm btn-ghost header-cta" href="https://github.com/yl365/imgConvert" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03a9.6 9.6 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z" fill="currentColor"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-grid-bg" aria-hidden="true"></div>
+    <div class="hero-glow" aria-hidden="true"></div>
+
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow" data-anim="1"><span class="tick"></span>本地运行 · 无需上传 · MIT 开源</p>
+
+        <h1 class="hero-title">
+          <span data-anim="2">几百张图片，</span>
+          <span class="hl" data-anim="3">一拖即转</span>
+        </h1>
+
+        <p class="lede" data-anim="4">
+          桌面端图片批量格式转换工具。把图片或整个文件夹拖进来，选好格式，一键转换——
+          <strong>毫秒级单图、自动占满所有 CPU 核心</strong>，
+          压得狠却看不出差别，目录结构原样保留，<strong>绝不丢文件</strong>。
+        </p>
+
+        <div class="cta-row" data-anim="5">
+          <a class="btn btn-primary" href="#download">
+            下载 Windows 版
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="#how">看看怎么用</a>
+        </div>
+
+        <ul class="hero-meta" data-anim="6">
+          <li><span class="mono">v1.0</span> 免安装，双击即运行</li>
+          <li><span class="mono">0</span> 图片上传，全部本地处理</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" data-anim="4">
+        <figure class="shot">
+          <div class="shot-bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="shot-title mono">imgConvert — 批量转换</span>
+          </div>
+          <img src="assets/img/ui.png" alt="imgConvert 应用主界面：拖入文件与文件夹，选择输出格式与质量" width="1280" height="960" loading="eager">
+          <span class="corner tl" aria-hidden="true"></span>
+          <span class="corner tr" aria-hidden="true"></span>
+          <span class="corner bl" aria-hidden="true"></span>
+          <span class="corner br" aria-hidden="true"></span>
+        </figure>
+
+        <div class="chip chip-a">
+          <span class="mono">SINGLE-IMAGE</span>
+          <strong>毫秒级转换</strong>
+        </div>
+        <div class="chip chip-b">
+          <span class="mono">CONCURRENCY</span>
+          <strong>自动满核并发</strong>
+        </div>
+        <div class="chip chip-c">
+          <span class="mono">SAFE-OUTPUT</span>
+          <strong>目录结构原样保留</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section class="stats" aria-label="关键数据">
+    <div class="wrap stats-inner">
+      <div class="stat reveal">
+        <span class="stat-num">7</span>
+        <span class="stat-label">种输出格式</span>
+      </div>
+      <div class="stat reveal">
+        <span class="stat-num">9</span>
+        <span class="stat-label">种输入格式</span>
+      </div>
+      <div class="stat reveal">
+        <span class="stat-num">100<span class="pct">%</span></span>
+        <span class="stat-label">本地运行</span>
+      </div>
+      <div class="stat reveal">
+        <span class="stat-num">MIT</span>
+        <span class="stat-label">开源协议</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="kicker mono">// 01 — FEATURES</p>
+        <h2>为「批量」而生的每一个细节</h2>
+        <p class="section-sub">不是把单张转换循环几百遍，而是从并发、输出到容错，整套都为大批量场景重新设计。</p>
+      </header>
+
+      <div class="cards">
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M13 2 L4 13.5h6L9 22l10-11.5h-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>极速，快到飞起</h3>
+          <p>单图转换以毫秒计，自动并发占满所有 CPU 核心，几百张图批量处理也不卡顿。底层 libvips，性能拉满。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 6h6l2 2.5h10V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 11h18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="3 3"/></svg>
+          </span>
+          <h3>拖入文件夹，自动递归</h3>
+          <p>直接拖进文件或整个文件夹，自动递归扫描多层子目录，不用手动一个个挑。</p>
+        </article>
+
+        <article class="card card-accent reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>绝不丢文件</h3>
+          <p>输出<strong>严格按原目录结构</strong>落盘，不同子文件夹里的同名图片各归各位、互不覆盖。告别扁平化导致的静默丢图。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 8h16M4 14h16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="14" r="2.3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+          </span>
+          <h3>智能压缩，闭眼用</h3>
+          <p>质量滑块 0–100，各格式预置了「肉眼基本无差」的默认档，闭眼选也不会压成马赛克。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 12a8 8 0 1 1-2.6-5.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <h3>断点续转</h3>
+          <p>已转换成功的输出默认自动跳过，中断后重跑只补未完成的，随时可取消，不用从头再来。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 19V5M4 19h16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 16v-5M12.5 16V8M17 16v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <h3>结果透明可控</h3>
+          <p>每个文件实时显示原大小、输出大小、压缩率与耗时，效果一目了然，不是黑盒。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORMATS ============ -->
+  <section class="section section-alt" id="formats">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="kicker mono">// 02 — FORMATS</p>
+        <h2>从 HEIC 到 AVIF，基本通吃</h2>
+        <p class="section-sub">手机拍的 HEIC、老图 BMP、现代的 AVIF 与 JXL，都能读；输出覆盖主流与现代两大阵营。</p>
+      </header>
+
+      <div class="format-panel reveal">
+        <div class="format-row">
+          <div class="format-head">
+            <span class="mono tag tag-out">OUTPUT</span>
+            <h3>输出格式</h3>
+          </div>
+          <ul class="tags">
+            <li>AVIF</li><li>WebP</li><li>JPEG</li><li>JXL</li><li>PNG</li><li>GIF</li><li>TIFF</li>
+          </ul>
+        </div>
+
+        <div class="format-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 12h15m0 0l-5-5m5 5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <div class="format-row">
+          <div class="format-head">
+            <span class="mono tag tag-in">INPUT</span>
+            <h3>输入格式</h3>
+          </div>
+          <ul class="tags">
+            <li>JPEG</li><li>PNG</li><li>WebP</li><li>AVIF</li><li>JXL</li><li>TIFF</li><li>GIF</li><li>BMP</li><li>HEIC / HEIF</li>
+          </ul>
+        </div>
+      </div>
+
+      <ul class="format-extra reveal">
+        <li><strong>尺寸变换</strong><span>原尺寸 / 固定宽 / 固定高 / 固定长边 / 等比百分比</span></li>
+        <li><strong>输出位置</strong><span>原目录（同目录）或自定义目录（保留目录结构）</span></li>
+        <li><strong>存在则覆盖</strong><span>便于重跑或原地重编码</span></li>
+        <li><strong>转换日志</strong><span>方便事后核对与排查</span></li>
+      </ul>
+    </div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>AVIF</span><span>·</span><span>WebP</span><span>·</span><span>JPEG</span><span>·</span><span>JXL</span><span>·</span><span>PNG</span><span>·</span><span>GIF</span><span>·</span><span>TIFF</span><span>·</span><span>HEIC</span><span>·</span><span>BMP</span><span>·</span>
+        <span>AVIF</span><span>·</span><span>WebP</span><span>·</span><span>JPEG</span><span>·</span><span>JXL</span><span>·</span><span>PNG</span><span>·</span><span>GIF</span><span>·</span><span>TIFF</span><span>·</span><span>HEIC</span><span>·</span><span>BMP</span><span>·</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW ============ -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="kicker mono">// 03 — HOW IT WORKS</p>
+        <h2>三步上手，没有学习成本</h2>
+      </header>
+
+      <ol class="steps">
+        <li class="step reveal">
+          <span class="step-num mono">01</span>
+          <h3>拖进去</h3>
+          <p>把图片或文件夹拖进窗口，也可以点按钮选择。子目录会自动递归扫描。</p>
+        </li>
+        <li class="step reveal">
+          <span class="step-num mono">02</span>
+          <h3>选参数</h3>
+          <p>选好输出格式、质量与尺寸。默认档即可，多数场景不用细调。</p>
+        </li>
+        <li class="step reveal">
+          <span class="step-num mono">03</span>
+          <h3>点开始</h3>
+          <p>点「开始转换」，进度、成功 / 跳过 / 失败统计与压缩率实时呈现。</p>
+        </li>
+      </ol>
+
+      <div class="tips reveal">
+        <h3 class="tips-title mono">// 使用小贴士</h3>
+        <ul>
+          <li><span>想压到最小</span>优先选 AVIF 或 WebP，质量 60–80 通常就能兼顾体积与画质。</li>
+          <li><span>要无损</span>选 PNG / JXL / TIFF，图标、截图、存档场景最稳。</li>
+          <li><span>兼容老设备</span>JPEG 通用性最好，但不支持透明。</li>
+          <li><span>批量中断了</span>不用删已转换的文件，直接重跑，已存在的会自动跳过。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DOWNLOAD ============ -->
+  <section class="section section-alt" id="download">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="kicker mono">// 04 — DOWNLOAD</p>
+        <h2>下载 imgConvert</h2>
+        <p class="section-sub">当前主要提供 Windows 版本，免安装、双击即运行；macOS / Linux 可从源码构建。</p>
+      </header>
+
+      <div class="dl-grid">
+        <article class="dl-card dl-primary reveal">
+          <span class="dl-badge mono">推荐</span>
+          <h3>GitHub Releases</h3>
+          <p>下载对应平台的可执行文件，双击即可运行，无需安装。更新也第一时间发布在这里。</p>
+          <a class="btn btn-primary btn-block" href="https://github.com/yl365/imgConvert/releases" target="_blank" rel="noopener">
+            前往 Releases
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 17L17 7m0 0H9m8 0v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </article>
+
+        <article class="dl-card reveal">
+          <span class="dl-badge mono">Windows 备用</span>
+          <h3>百度网盘</h3>
+          <p>Windows 版本的备用下载通道，适合 GitHub 访问不畅时使用。</p>
+
+          <div class="dl-field">
+            <a class="dl-link mono" href="https://pan.baidu.com/s/1gtVF8Z1v_0zyfmudh6LSaw?pwd=9e84" target="_blank" rel="noopener">pan.baidu.com/s/1gtVF8Z1v_0zyfmudh6LSaw</a>
+            <button class="copy-btn" type="button" data-copy="https://pan.baidu.com/s/1gtVF8Z1v_0zyfmudh6LSaw?pwd=9e84" aria-label="复制下载链接">复制链接</button>
+          </div>
+
+          <div class="dl-field">
+            <span class="dl-code mono">提取码 <strong>9e84</strong></span>
+            <button class="copy-btn" type="button" data-copy="9e84" aria-label="复制提取码">复制提取码</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="build reveal">
+        <h3 class="mono">// 从源码构建</h3>
+        <p>需要 Go 1.25+、Node.js 与 <a href="https://v3.wails.io/" target="_blank" rel="noopener">Wails v3</a> CLI：</p>
+<pre class="code"><code>git clone https://github.com/yl365/imgConvert.git
+cd imgConvert
+wails3 dev      <span class="cm"># 开发预览（热重载）</span>
+wails3 build    <span class="cm"># 构建生产可执行文件</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TECH ============ -->
+  <section class="section" id="tech">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="kicker mono">// 05 — UNDER THE HOOD</p>
+        <h2>小而快的技术选型</h2>
+      </header>
+      <ul class="tech-list">
+        <li class="reveal"><span class="mono">BACKEND</span><strong>Go + libvips</strong><em>通过 CLI 驱动，性能拉满</em></li>
+        <li class="reveal"><span class="mono">FRONTEND</span><strong>原生 HTML / CSS / JS</strong><em>无框架负担，界面轻量</em></li>
+        <li class="reveal"><span class="mono">SHELL</span><strong>Wails v3</strong><em>Web 技术打包原生应用，体积小启动快</em></li>
+        <li class="reveal"><span class="mono">PLATFORM</span><strong>Windows / macOS / Linux</strong><em>跨平台，一套代码</em></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="cta-band">
+    <div class="wrap cta-inner reveal">
+      <h2>几百张图片，一拖即转。</h2>
+      <p>本地运行、毫秒级、绝不丢文件。现在就下载试试。</p>
+      <div class="cta-row cta-center">
+        <a class="btn btn-primary btn-lg" href="https://github.com/yl365/imgConvert/releases" target="_blank" rel="noopener">下载 Windows 版</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/yl365/imgConvert" target="_blank" rel="noopener">在 GitHub 上 Star</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="foot-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M13.8 2 L4 14 h6 L8.4 22 L20 9.4 h-6.2 z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-name">imgConvert</span>
+    </div>
+    <p class="foot-note">以 MIT License 开源 · 本地运行，图片不上传</p>
+    <nav class="foot-links" aria-label="页脚导航">
+      <a href="https://github.com/yl365/imgConvert" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/yl365/imgConvert/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="https://github.com/yl365/imgConvert/issues" target="_blank" rel="noopener">反馈 Issue</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
