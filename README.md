@@ -1,59 +1,88 @@
-# Welcome to Your New Wails3 Project!
+# imgConvert · 极速图片批量格式转换
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+![imgConvert UI](UI.png)
 
-## Getting Started
+基于 [libvips](https://www.libvips.org/) 的桌面端图片批量转换工具。把图片或整个文件夹拖进来，选好格式，一键转换——**快到飞起，压缩狠又几乎看不出差别**。
 
-1. Navigate to your project directory in the terminal.
+---
 
-2. To run your application in development mode, use the following command:
+## 为什么用 imgConvert
 
-   ```
-   wails3 dev
-   ```
+- **极速**：底层由 libvips 驱动，单图转换以毫秒计；自动并发占满所有 CPU 核心，几百张图批量处理也不卡。
+- **批量无压力**：直接拖入文件或整个文件夹，自动递归扫描子目录。
+- **绝不丢文件**：输出**严格按原目录结构**落盘，不同子文件夹里的同名图片各归各位，互不覆盖。
+- **智能压缩**：质量滑块 0–100，各格式预置了「肉眼基本无差」的默认档，闭眼用也不会压成马赛克。
+- **断点续转**：已转换成功的输出默认自动跳过，中断后重跑只补未完成的；随时可取消。
+- **所见即所得**：每个文件实时显示原大小、输出大小、压缩率与耗时，结果透明可控。
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+---
 
-3. To build your application for production, use:
+## 功能一览
 
-   ```
-   wails3 build
-   ```
+- 拖拽添加文件 / 文件夹（含多层子目录）
+- 输出格式：**AVIF · WebP · JPEG · JXL · PNG · GIF · TIFF**
+- 输入格式：**JPEG · PNG · WebP · AVIF · JXL · TIFF · GIF · BMP · HEIC / HEIF**
+- 质量调节（等效 JPEG 质量刻度，按格式自动校准）
+- 尺寸变换：原尺寸 / 固定宽 / 固定高 / 固定长边 / 等比百分比
+- 输出位置：原目录（同目录）或自定义目录（保留目录结构）
+- 「存在则覆盖」开关，便于重跑或原地重编码
+- 转换日志，方便事后核对与排查
+- 转换进度、成功 / 跳过 / 失败统计一目了然
 
-   This will create a production-ready executable in the `build` directory.
+---
 
-## Exploring Wails3 Features
+## 三步上手
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+1. 把图片或文件夹**拖进窗口**（也可点按钮选择）。
+2. 选好**输出格式、质量、尺寸**。
+3. 点 **开始转换**，进度与结果实时呈现。
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+---
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+## 下载与安装
 
-   ```
-   go run .
-   ```
+### 方式一：直接下载（推荐）
 
-   Note: Some examples may be under development during the alpha phase.
+前往 [Releases](https://github.com/yl365/imgConvert/releases) 页面，下载对应平台的可执行文件，双击即可运行，无需安装。
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
+> 当前主要提供 Windows 版本；macOS / Linux 可从源码构建。
 
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
+### 方式二：从源码构建
 
-## Project Structure
+需要：Go 1.25+、Node.js、[Wails v3](https://v3.wails.io/) CLI。
 
-Take a moment to familiarize yourself with your project structure:
+```bash
+# 克隆仓库
+git clone https://github.com/yl365/imgConvert.git
+cd imgConvert
 
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
+# 开发预览（热重载）
+wails3 dev
 
-## Next Steps
+# 构建生产可执行文件（输出到 build/ 目录）
+wails3 build
+```
 
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
+---
 
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+## 使用小贴士
+
+- **想压到最小**：优先选 AVIF 或 WebP，质量 60–80 通常就能兼顾体积与画质。
+- **要无损**：选 PNG / JXL / TIFF，图标、截图、存档场景最稳。
+- **需要兼容老设备**：JPEG 通用性最好，但不支持透明。
+- **大批量中断了？** 不用删已转换的文件，直接再跑一次，已存在的会自动跳过。
+
+---
+
+## 技术栈
+
+- 后端：Go + libvips（通过 CLI 驱动）
+- 前端：原生 HTML / CSS / JavaScript
+- 框架：[Wails v3](https://v3.wails.io/)（用 Web 技术打包原生桌面应用，体积小、启动快）
+- 平台：Windows / macOS / Linux
+
+---
+
+## License
+
+本项目以 MIT License 开源，详见 [LICENSE](LICENSE)。
